@@ -1,0 +1,177 @@
+// 仓储人效管理系统 - 数据库结构
+// PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id         Int       @id @default(autoincrement())
+  username   String    @unique @db.VarChar(50)
+  password   String    @db.VarChar(255)
+  role       Role      @default(LEADER)
+  realName   String?   @db.VarChar(50)
+  phone      String?   @db.VarChar(20)
+  teamId     Int?
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  team       Team?     @relation(fields: [teamId], references: [id])
+  reports    WeeklyReport[]
+  logs       OperationLog[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN        // 管理员
+  FINANCE      // 财务
+  LEADER       // 组长
+}
+
+// 仓库表
+model Warehouse {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(50)
+  location   String?   @db.VarChar(100)
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  teams      Team[]
+
+  @@map("warehouses")
+}
+
+// 小组表
+model Team {
+  id         Int       @id @default(autoincrement())
+  warehouseId Int      @map("warehouse_id")
+  name       String    @db.VarChar(100)
+  floor      String?   @db.VarChar(20)
+  function   String?   @db.VarChar(50)
+  status     Int       @default(1)
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  warehouse  Warehouse @relation(fields: [warehouseId], references: [id])
+  users     User[]
+  weeklyReports WeeklyReport[]
+  monthlyEfficiency MonthlyEfficiency[]
+
+  @@map("teams")
+}
+
+// 周报主表
+model WeeklyReport {
+  id              Int       @id @default(autoincrement())
+  teamId          Int       @map("team_id")
+  year            Int
+  week            Int
+  reportDate      DateTime  @map("report_date") @db.Date
+  totalHeadcount  Int       @default(0) @map("total_headcount")
+  formalWorkers   Int       @default(0) @map("formal_workers")
+  contractWorkers Int       @default(0) @map("contract_workers")
+  totalOutput     Decimal?  @map("total_output") @db.Decimal(15,2)
+  stdOutput       Decimal?  @map("std_output") @db.Decimal(15,2)
+  efficiency      Decimal?  @map("efficiency") @db.Decimal(10,4)
+  status          ReportStatus @default(SUBMITTED)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  team    Team                  @relation(fields: [teamId], references: [id])
+  details WeeklyReportDetail[]
+  submitter User?               @relation(fields: [submitterId], references: [id])
+  submitterId Int?
+
+  @@unique([teamId, year, week])
+  @@map("weekly_reports")
+}
+
+enum ReportStatus {
+  SUBMITTED  // 已提交
+  APPROVED  // 已审核
+  REJECTED  // 已驳回
+}
+
+// 周报明细
+model WeeklyReportDetail {
+  id        Int      @id @default(autoincrement())
+  reportId  Int      @map("report_id")
+  module    String   @db.VarChar(50)  // inbound/outbound/shelve/qc
+  operation String   @db.VarChar(100) // 入库/出库/上架等具体操作
+  unit      String   @db.VarChar(20)  // 件/单/人等
+  quantity  Decimal  @db.Decimal(15,2)
+  stdRate   Decimal? @map("std_rate") @db.Decimal(10,2) // 标准人效
+
+  report    WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("weekly_report_details")
+}
+
+// 标准人效配置
+model StdEfficiency {
+  id          Int      @id @default(autoincrement())
+  module      String   @db.VarChar(50)
+  operation   String   @db.VarChar(100)
+  unit        String   @db.VarChar(20)
+  stdRate     Decimal  @map("std_rate") @db.Decimal(10,2) // 件/人/天
+  description String?  @db.VarChar(200)
+  status     Int      @default(1)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("std_efficiency")
+}
+
+// 月度人效汇总
+model MonthlyEfficiency {
+  id             Int      @id @default(autoincrement())
+  teamId         Int      @map("team_id")
+  year           Int
+  month          Int
+  efficiency     Decimal? @map("efficiency") @db.Decimal(10,4)
+  inboundEff     Decimal? @map("inbound_efficiency") @db.Decimal(10,4)
+  outboundEff    Decimal? @map("outbound_efficiency") @db.Decimal(10,4)
+  shelveEff      Decimal? @map("shelve_efficiency") @db.Decimal(10,4)
+  qcEff          Decimal? @map("qc_efficiency") @db.Decimal(10,4)
+  totalOutput    Decimal? @map("total_output") @db.Decimal(15,2)
+  avgHeadcount   Decimal? @map("avg_headcount") @db.Decimal(10,2)
+  reportCount    Int?     @map("report_count")
+  status         Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  team           Team     @relation(fields: [teamId], references: [id])
+
+  @@unique([teamId, year, month])
+  @@map("monthly_efficiency")
+}
+
+// 系统配置
+model SystemConfig {
+  id            Int      @id @default(autoincrement())
+  configKey     String   @unique @map("config_key") @db.VarChar(50)
+  configValue   String?  @map("config_value") @db.VarChar(255)
+  description   String?  @db.VarChar(200)
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("system_config")
+}
+
+// 操作日志
+model OperationLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  action    String   @db.VarChar(100)
+  detail    String?  @db.Text
+  ip        String?  @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@map("operation_logs")
+}

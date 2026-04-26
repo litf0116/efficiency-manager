@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人效管理系统</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1>📊 人效管理系统</h1>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-tab="dashboard">数据看板</button>
+    <button class="tab-btn" data-tab="import">数据导入</button>
+    <button class="tab-btn" data-tab="manage">数据管理</button>
+    <button class="tab-btn" data-tab="settings">系统设置</button>
+  </nav>
+
+  <main class="tab-content active" id="tab-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-teams">-</div>
+        <div class="stat-label">小组数量</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-avg">-</div>
+        <div class="stat-label">平均人效</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-pass">-</div>
+        <div class="stat-label">达标率</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-alert">-</div>
+        <div class="stat-label">预警数量</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">人效趋势</div>
+        <div class="chart-container">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">最新排名</div>
+        <div class="chart-container">
+          <canvas id="ranking-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">最近记录</div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>小组</th>
+              <th>月份</th>
+              <th>人效</th>
+              <th>目标</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="log-table-body">
+            <tr><td colspan="5" class="empty">暂无数据</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <main class="tab-content" id="tab-import">
+    <div class="card">
+      <div class="card-title">Excel 数据导入</div>
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-zone-icon">📁</div>
+        <div class="drop-zone-text">拖拽 Excel 文件到此处</div>
+        <div class="drop-zone-hint">或点击选择文件 (.xlsx)</div>
+        <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none">
+      </div>
+      <div class="import-status" id="import-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">数据说明</div>
+      <p style="color:var(--text-light);font-size:14px;line-height:1.8;">
+        支持导入包含人效数据的 Excel 文件。系统会自动识别"人效数据"工作表，解析其中的小组名称、年份、月份和人效值数据。
+        导入时请确保 Excel 文件格式正确，包含必要的数据列。
+      </p>
+    </div>
+  </main>
+
+  <main class="tab-content" id="tab-manage">
+    <div class="card">
+      <div id="manage-table-container">
+        <div class="manage-header">
+          <h3>数据管理</h3>
+          <button class="btn btn-primary" onclick="App.refreshManageTab()">刷新</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="display:flex;gap:12px;">
+      <button class="btn btn-secondary" id="export-btn">📥 导出数据</button>
+      <button class="btn btn-secondary" id="clear-data-btn" style="color:var(--danger);">🗑️ 清空数据</button>
+    </div>
+  </main>
+
+  <main class="tab-content" id="tab-settings">
+    <div class="card">
+      <div class="card-title">人效目标设置</div>
+      <div class="form-group">
+        <label>达标人效目标</label>
+        <input type="number" id="target-efficiency" step="0.001" min="0" placeholder="如：1.000">
+      </div>
+      <div class="form-group">
+        <label>低效率阈值 (低于此值预警)</label>
+        <input type="number" id="low-threshold" step="0.01" min="0" max="1" placeholder="如：0.9">
+      </div>
+      <div class="form-group">
+        <label>高效率阈值 (高于此值标记)</label>
+        <input type="number" id="high-threshold" step="0.01" min="1" placeholder="如：1.5">
+      </div>
+      <button class="btn btn-primary" id="save-settings-btn">保存设置</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">仓库管理</div>
+      <div id="warehouse-list"></div>
+    </div>
+  </main>
+
+  <div class="modal" id="modal">
+    <div class="modal-content"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
