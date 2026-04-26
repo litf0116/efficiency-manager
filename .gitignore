@@ -1,4 +1,9 @@
 node_modules
-# Keep environment variables out of version control
-.env
 .gstack/
+.env
+.env.prod
+server.log
+dist/
+*.log
+nginx/ssl/
+postgres_data/
