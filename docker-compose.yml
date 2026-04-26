@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:16-alpine
+    container_name: efficiency-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: efficiency
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-efficiency123}
+      POSTGRES_DB: efficiency_manager
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U efficiency -d efficiency_manager"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NestJS 后端
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: efficiency-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://efficiency:${POSTGRES_PASSWORD:-efficiency123}@postgres:5432/efficiency_manager?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/admin/config/current-week"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Nginx 反向代理 + 静态文件服务
+  nginx:
+    image: nginx:alpine
+    container_name: efficiency-nginx
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./admin/dist:/usr/share/nginx/html/admin:ro
+      - ./h5/dist:/usr/share/nginx/html/h5:ro
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+    driver: local
