@@ -7,6 +7,9 @@
     "build": "tsc",
     "start": "node dist/main.js",
     "dev": "ts-node src/main.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
@@ -43,8 +46,14 @@
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
+    "@nestjs/testing": "^11.1.19",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.19.39",
+    "@types/supertest": "^7.2.0",
+    "jest": "^30.3.0",
     "prisma": "5",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

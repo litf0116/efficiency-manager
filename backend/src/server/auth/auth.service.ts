@@ -87,6 +87,18 @@ export class AuthService {
   }
 
   async getProfile(userId: number) {
+    // 演示用户特殊处理
+    if (userId === 0) {
+      return {
+        id: 0,
+        username: 'zhangsan',
+        role: 'LEADER',
+        realName: '演示用户',
+        teamId: 1,
+        status: 1,
+      };
+    }
+
     return this.prisma.user.findUnique({
       where: { id: userId },
       select: {
