@@ -39,14 +39,14 @@ api.interceptors.response.use(
 )
 
 export const login = (data: { username: string; password: string }) =>
-  api.post('/api/auth/login', data)
+  api.post('/api/h5/auth/login', data)
 
-export const getTeams = () => api.get('/api/teams')
+export const getTeams = () => api.get('/api/h5/teams')
 
-export const getTeamById = (id: number) => api.get(`/api/teams/${id}`)
+export const getTeamById = (id: number) => api.get(`/api/h5/teams/${id}`)
 
 export const getWeekReports = (teamId: number) =>
-  api.get('/api/reports/week', { params: { teamId } })
+  api.get('/api/h5/reports/week', { params: { teamId } })
 
 export const submitWeekReport = (data: {
   teamId: number
@@ -57,7 +57,7 @@ export const submitWeekReport = (data: {
   exitQuantity: number
   qualityCheckQuantity: number
   shelvingQuantity: number
-}) => api.post('/api/reports/week', data)
+}) => api.post('/api/h5/reports', data)
 
 export const getCurrentWeekPeriod = () => api.get('/api/config/current-week')
 

@@ -119,7 +119,7 @@ curl http://your-server-ip/api/admin/config/current-week
 | 管理后台 | http://your-server-ip/admin/ |
 | H5 前端 | http://your-server-ip/h5/ |
 | Admin API 文档 | http://your-server-ip/docs/admin |
-| Client API 文档 | http://your-server-ip/docs/client |
+| Client API 文档 | http://your-server-ip/docs/h5 |
 
 ---
 
